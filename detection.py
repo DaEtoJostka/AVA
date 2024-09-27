@@ -1,7 +1,9 @@
 import cv2
 from ultralytics import YOLO
-import pandas as pd
+import polars as pl
 import os
+import numpy as np
+from tqdm import tqdm 
 
 # Путь к входному видео
 input_video_path = 'input_video.mp4'
@@ -12,8 +14,8 @@ output_video_path = 'output_video.mp4'
 # Путь для сохранения аннотаций
 annotations_path = 'annotations.csv'
 
-# Загрузка модели весов модели
-model = YOLO('yolov8s.pt')
+# Загрузка модели
+model = YOLO('yolov10s.pt')
 
 # Открытие видео
 cap = cv2.VideoCapture(input_video_path)
@@ -26,17 +28,25 @@ if not cap.isOpened():
 frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 fps = cap.get(cv2.CAP_PROP_FPS)
+total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
 # Настройка видео-записи
-fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Можно использовать другой кодек
+fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 out = cv2.VideoWriter(output_video_path, fourcc, fps, (frame_width, frame_height))
 
-# Список для хранения аннотаций
-annotations = []
+# Инициализация списков для аннотаций
+frames = []
+classes = []
+confidences = []
+x1_list = []
+y1_list = []
+x2_list = []
+y2_list = []
 
 frame_count = 0
 
-while True:
+# Использование tqdm для отображения прогресса
+for _ in tqdm(range(total_frames), desc="Обработка видео"):
     ret, frame = cap.read()
     if not ret:
         break
@@ -44,11 +54,13 @@ while True:
     frame_count += 1
 
     # Выполнение детекции
-    results = model(frame)
+    results = model(frame, verbose=False)  # Отключение вывода прогресс-баров внутри модели
 
     # Обработка результатов
     for result in results:
         boxes = result.boxes
+        if boxes is None:
+            continue
         for box in boxes:
             cls = int(box.cls[0])
             confidence = float(box.conf[0])
@@ -57,16 +69,14 @@ while True:
             # Получение названия класса
             class_name = model.names[cls]
 
-            # Добавление аннотации
-            annotations.append({
-                'frame': frame_count,
-                'class': class_name,
-                'confidence': confidence,
-                'x1': x1,
-                'y1': y1,
-                'x2': x2,
-                'y2': y2
-            })
+            # Добавление данных в отдельные списки
+            frames.append(frame_count)
+            classes.append(class_name)
+            confidences.append(confidence)
+            x1_list.append(x1)
+            y1_list.append(y1)
+            x2_list.append(x2)
+            y2_list.append(y2)
 
             # Рисование рамки и подписи на кадре
             cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
@@ -80,21 +90,29 @@ while True:
     # Запись обработанного кадра в выходное видео
     out.write(frame)
 
-    # Отображение кадра
-    cv2.imshow('YOLOv8 Detection', frame)
-
-    # Прерывание по нажатию клавиши 'q'
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+    # Отображение кадра (опционально, можно отключить для ускорения)
+    # cv2.imshow('YOLOv8 Detection', frame)
+    # if cv2.waitKey(1) & 0xFF == ord('q'):
+    #     break
 
 # Освобождение ресурсов
 cap.release()
 out.release()
 cv2.destroyAllWindows()
 
+# Создание DataFramа с аннотациями
+df = pl.DataFrame({
+    'frame': frames,
+    'class': classes,
+    'confidence': confidences,
+    'x1': x1_list,
+    'y1': y1_list,
+    'x2': x2_list,
+    'y2': y2_list
+})
+
 # Сохранение аннотаций в CSV файл
-df = pd.DataFrame(annotations)
-df.to_csv(annotations_path, index=False)
+df.write_csv(annotations_path)
 
 print(f"Аннотации сохранены в {annotations_path}")
 print(f"Выходное видео сохранено в {output_video_path}")
