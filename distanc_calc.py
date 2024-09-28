@@ -2,10 +2,10 @@ import cv2
 
 from ultralytics import YOLO, solutions
 
-model = YOLO("yolov10s.pt")
+model = YOLO("weights/yolov10s.pt")
 names = model.model.names
 
-cap = cv2.VideoCapture("test.mp4")
+cap = cv2.VideoCapture("test_videos/test.mp4")
 assert cap.isOpened(), "Ошибка в чтении файла"
 w, h, fps = (int(cap.get(x)) for x in (cv2.CAP_PROP_FRAME_WIDTH, cv2.CAP_PROP_FRAME_HEIGHT, cv2.CAP_PROP_FPS))
 

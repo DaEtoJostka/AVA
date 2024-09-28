@@ -6,16 +6,16 @@ import numpy as np
 from tqdm import tqdm 
 
 # Путь к входному видео
-input_video_path = 'test.mp4'
+input_video_path = 'test_videos/test.mp4'
 
 # Путь для сохранения выходного видео
-output_video_path = 'output_video.mp4'
+output_video_path = 'output_videos/detection_video.mp4'
 
 # Путь для сохранения аннотаций
-annotations_path = 'annotations.csv'
+annotations_path = 'annotations/annotations_detection.csv'
 
 # Загрузка модели
-model = YOLO('yolov10s.pt')
+model = YOLO('weights/yolov10s.pt')
 
 # Открытие видео
 cap = cv2.VideoCapture(input_video_path)

@@ -95,12 +95,12 @@ def main(input_video_path, output_video_path, output_csv_path):
 
 if __name__ == "__main__":
     # Путь к входному видео
-    input_video = "gasprom.mp4"
+    input_video = "test_videos/gasprom.mp4"
 
     # Путь к выходному видео
-    output_video = "annotated_video.mp4"
+    output_video = "output_videos/mask_video.mp4"
 
     # Путь к выходному CSV
-    output_csv = "mask_annotations.csv"
+    output_csv = "annotations/mask_annotations.csv"
 
     main(input_video, output_video, output_csv)
