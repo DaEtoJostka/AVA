@@ -4,12 +4,16 @@ import uuid
 import tempfile
 import cv2
 import ffmpeg
+import torch.cuda
 from ultralytics import YOLO
 import polars as pl
 from tqdm import tqdm
 from typing import Optional
+from uuid import uuid4
+import subprocess
 
 from infra.minio_client import MinioClient
+from pathlib import Path
 
 minio_client = MinioClient()
 
@@ -18,32 +22,40 @@ def setup_logging() -> None:
     """Setup logging configuration."""
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-
 def compress_video(input_file: str, output_file: str, crf: int = 23, preset: str = 'medium') -> None:
     """Compress the video using ffmpeg."""
     try:
-        (
-            ffmpeg
-            .input(input_file)
-            .output(
+        command = ['ffmpeg', '-i', input_file, '-vcodec', 'libx264',
+            '-crf', str(crf),
+            '-preset', preset,
+            '-acodec', 'aac',
+            '-b:a', '128k',
+            '-y',
+            output_file]
+
+        subprocess.run(command, check=True)
+        '''(ffmpeg
+        .input(input_file)
+        .output(
                 output_file,
                 vcodec='libx264',
                 crf=crf,
                 preset=preset,
                 acodec='aac',
                 audio_bitrate='128k'
-            )
-            .run(overwrite_output=True)
         )
+        .run(overwrite_output=True))'''
         logging.info(f"Video successfully compressed and saved as {output_file}")
-
-    except ffmpeg.Error as e:
-        logging.error(f"Error compressing video: {e.stderr.decode()}")
+    except Exception as e:
+        logging.error(e)
+    '''except ffmpeg.Error as e:
+        logging.error(f"Error compressing video: {e.stderr.decode()}")'''
 
 
 def process_video(input_video: str, output_video: str, annotations_path: str) -> None:
     """Process the video, perform detection, and save annotations."""
-    model = YOLO('app/ml_models/yolov10s.pt')
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = YOLO('app/ml_models/yolov10s.pt').to(device)
 
     cap = cv2.VideoCapture(input_video)
     if not cap.isOpened():
@@ -130,12 +142,12 @@ def bbox_detect(input_video: str, output_video: str, compressed_video: str,
     logging.info(f"Annotations path: {annotations}")
 
     with (
-        tempfile.NamedTemporaryFile(suffix='.mp4', dir='/tmp/', mode='wb+',delete=False) as input_file,
-        tempfile.NamedTemporaryFile(suffix='.mp4', dir='/tmp/', mode='wb+',delete=False) as output_file,
-        tempfile.NamedTemporaryFile(suffix='.mp4', dir='/tmp/', mode='wb+',delete=False) as compressed_file,
+        tempfile.NamedTemporaryFile(suffix='.mp4', mode='wb+', delete=False) as input_file,
+        tempfile.NamedTemporaryFile(suffix='.mp4', mode='wb+', delete=False) as output_file,
+        tempfile.NamedTemporaryFile(suffix='.mp4', mode='wb+', delete=False) as compressed_file
     ):
         input_file.write(minio_client.get_file('ava', input_video, ).data)
-        process_video(input_file.name,output_file.name, annotations)
+        process_video(input_file.name, output_file.name, annotations)
         compress_video(output_file.name, compressed_file.name, crf=23, preset='medium')
         compressed_file.seek(0)
         result = compressed_file.read()

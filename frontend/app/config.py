@@ -3,8 +3,8 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    MINIO_ACCESS_KEY: str = "QMyzPZAYcKOGUwQvFrrb"
-    MINIO_SECRET_KEY: str = "GVbbEchLDJsaVd9t936rYcEjBU6qcVv9tFhGAwpn"
+    MINIO_ACCESS_KEY: str = "z7RUf7Ne4FFqHh4UyuqU"
+    MINIO_SECRET_KEY: str = "Le5xtxj2eQ6rKXZ4ac65WUKmYDheBOfzwEw7aru4"
     MINIO_HOST: str = "localhost"
     MINIO_PORT: int = 9000
     MINIO_SECURE: bool = False
