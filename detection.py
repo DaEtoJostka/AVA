@@ -6,7 +6,7 @@ import numpy as np
 from tqdm import tqdm 
 
 # Путь к входному видео
-input_video_path = 'input_video.mp4'
+input_video_path = 'test.mp4'
 
 # Путь для сохранения выходного видео
 output_video_path = 'output_video.mp4'

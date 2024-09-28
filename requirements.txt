@@ -1,3 +1,6 @@
 ultralytics
 opencv-python
 pandas
+mediapipe
+polars
+tqdm
