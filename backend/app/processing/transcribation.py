@@ -19,7 +19,7 @@ class Transcribation:
         audio, sr = librosa.load(video_path)
 
         audio_scenes = []
-        min_seconds = 2
+        min_seconds = 0.1
         for start_time, end_time in scene_list:
 
             start_frame = int(start_time.get_seconds() * sr)
@@ -41,7 +41,10 @@ class Transcribation:
         results = []
         for i in range(len(audio_scenes)):
             if audio_scenes[i].shape[0] != 0:
-                results.append(whisper.transcribe(self.model, audio_scenes[i]))
+                try:
+                    results.append(whisper.transcribe(self.model, audio_scenes[i]))
+                except:
+                    results.append({'text': '', 'segments': []})
             else:
                 results.append({'text': '', 'segments': []})
         return results
@@ -58,3 +61,21 @@ class Transcribation:
             'text_scenes': texts
         }
         return out
+
+'''from emotional_analysis import Emotional_analysis
+if __name__ == "__main__":
+    scenes = get_scenes('new_video.mp4')
+    transcribation = Transcribation(model_name='openai/whisper-medium')
+    emotional = Emotional_analysis()
+    data = transcribation.get_transcribation_inf('new_video.mp4', scenes)
+    print(' '.join(i['text'] for i in data['text_scenes']))
+    emotions = emotional.get_emotionals(text_scenes = data['text_scenes'],
+                             audio_scenes=data['audio_scenes'],
+                             scene_list=scenes,
+                             video_path='new_video.mp4')
+    print(emotions['text_emotions'])
+    print(emotions['audio_emotions'])
+    print(emotions['image_emotions'])
+    print(emotions['scene_emotions'])
+    print(emotions['main_emotion'])
+'''
