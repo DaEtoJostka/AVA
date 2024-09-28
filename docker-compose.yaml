@@ -1,0 +1,87 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ava
+      POSTGRES_PASSWORD: ava
+      POSTGRES_DB: ava
+#    volumes:
+#      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - ava
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  alembic:
+    build:
+      context: ./alembic
+      dockerfile: Dockerfile.alembic
+    environment:
+      POSTGRES_USER: ava
+      POSTGRES_PASSWORD: ava
+      POSTGRES_DB: ava
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    volumes:
+      - ./alembic/migrations:/app/migrations
+#    depends_on:
+#      - postgres
+    networks:
+      - ava
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.backend
+    environment:
+      POSTGRES_USER: ava
+      POSTGRES_PASSWORD: ava
+      POSTGRES_DB: ava
+      POSTGRES_HOST: ava
+      POSTGRES_PORT: 5432
+      MINIO_ROOT_USER: ava
+      MINIO_ROOT_PASSWORD: ava424242
+      MINIO_HOST: ava
+      MINIO_PORT: 9000
+#    depends_on:
+#      - postgres
+#      - minio
+    ports:
+      - "8000:8000"
+    networks:
+      - ava
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ava
+      MINIO_ROOT_PASSWORD: ava424242
+    volumes:
+      - ./s3/:/data
+    ports:
+      - "9000:9000"  # API порт
+      - "9001:9001"  # Порт консоли управления
+    networks:
+      - ava
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+    environment:
+      FASTAPI_HOST: backend
+      FASTAPI_PORT: 8000
+    depends_on:
+      - backend
+    ports:
+      - "8501:8501"
+    networks:
+      - ava
+
+networks:
+  ava:

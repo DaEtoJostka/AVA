@@ -1,0 +1,27 @@
+# Используем slim-образ Python 3.11
+FROM python:3.11-slim
+
+# Устанавливаем необходимые системные зависимости
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    libsm6 \
+    libgl1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Копируем файл с зависимостями
+COPY requirements.txt .
+
+# Устанавливаем зависимости
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Копируем код приложения
+COPY app/ .
+
+# Открываем порт для Streamlit
+EXPOSE 8501
+
+# Указываем команду запуска Streamlit приложения
+CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]

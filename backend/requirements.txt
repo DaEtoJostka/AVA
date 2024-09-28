@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+pydantic
+structlog
+sqlalchemy
+psycopg2-binary
+#ultralytics
+#opencv-python
+pandas
+polars
+#ffmpeg-python
+pydantic-settings
+celery

@@ -1,0 +1,46 @@
+# ================================
+# Stage 1 - Build dependencies
+# ================================
+FROM python:3.11-slim AS builder
+
+# Set environment variables for Python and pip
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Poetry (for dependency management)
+RUN curl -sSL https://install.python-poetry.org | python3 -
+
+# Set the working directory
+WORKDIR /app
+COPY . /app
+
+# Copy only the dependency files to leverage Docker cache
+
+# Install dependencies using Poetry
+RUN pip install --no-cache-dir -r requirements.txt
+
+# ================================
+# Stage 2 - Final image
+# ================================
+FROM python:3.11-slim
+
+# Set environment variables for Python
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Set a working directory
+WORKDIR /app
+
+# Copy dependencies from the builder stage
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+
+
+# Set the FastAPI command to run the app with Uvicorn
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]

@@ -1,0 +1,6 @@
+urllib3
+alembic
+pydantic
+pydantic-settings
+psycopg2-binary
+sqlalchemy
