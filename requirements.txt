@@ -4,3 +4,5 @@ pandas
 mediapipe
 polars
 tqdm
+easyocr
+Pillow
