@@ -12,3 +12,6 @@ ffmpeg-python
 pydantic-settings
 dramatiq
 redis
+scenedetect
+whisper-timestamped
+librosa
