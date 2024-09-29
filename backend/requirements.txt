@@ -15,3 +15,6 @@ redis
 scenedetect
 whisper-timestamped
 librosa
+scenedetect
+whisper-timestamped
+transformers

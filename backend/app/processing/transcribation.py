@@ -9,6 +9,7 @@ def get_scenes(video_path: str) -> list:
     scene_list = detect(video_path, AdaptiveDetector())
     return scene_list
 
+
 class Transcribation:
     def __init__(self, model_name='openai/whisper-small'):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

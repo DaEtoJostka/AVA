@@ -25,8 +25,8 @@ class DramatiqSettings(BaseSettings):
 
 
 class MinioSettings(BaseSettings):
-    MINIO_ACCESS_KEY: str = "z7RUf7Ne4FFqHh4UyuqU"
-    MINIO_SECRET_KEY: str = "Le5xtxj2eQ6rKXZ4ac65WUKmYDheBOfzwEw7aru4"
+    MINIO_ACCESS_KEY: str = "kk3seAiMQRLcCrbhL8mo"
+    MINIO_SECRET_KEY: str = "8LpQHc9LTuM1Ev4Io7k1b7Yu4g4wu8q7QB3YLVrn"
     MINIO_HOST: str = "localhost"
     MINIO_PORT: int = 9000
     MINIO_SECURE: bool = False
