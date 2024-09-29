@@ -1,4 +1,4 @@
-![Цифровой прорыв](https://drive.google.com/uc?export=view&id=1AkP94tbG0tFtfhNZNN8FjYguUF2lKlS-)
+![Цифровой прорыв](https://drive.google.com/uc?id=1AkP94tbG0tFtfhNZNN8FjYguUF2lKlS-)
 
 # AVA
 
