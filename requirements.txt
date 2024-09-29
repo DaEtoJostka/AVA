@@ -6,3 +6,6 @@ polars
 tqdm
 easyocr
 Pillow
+torch 
+torchvision 
+torchaudio
