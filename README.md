@@ -4,6 +4,10 @@
 
 AVA (Automatic video analyser) - многофункциональная система для разметки видео
 
+## Стек
+
+Python, PyTorch, YOLOv8, SceneDetect, Polars, Whisper-Small, RuBert-tiny-ru, AST, VisionTranformer, OpenCV, Dramatiq, Streamlit, PostgreSQL, pgVector, SQLAlchemy,  Docker, MinIO
+
 ## Описание возможностей
 
 - **Детекция объектов в видео**. Детекция более 1000 объектов
