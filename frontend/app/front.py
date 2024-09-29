@@ -61,6 +61,8 @@ elif page == "Анализ видео":
             with col1:
                 st.video(selected_video.data)
 
+                origin_video = video_map[selected_video_name].replace("_detected_compressed", "")
+
                 col_btn1, col_btn2, col_btn3, col_btn4 = st.tabs(["Сцены", "Либа звуков", "Либа символов", "Объекты"])
                 with col_btn1:
                     st.button("Сцены")
@@ -70,11 +72,18 @@ elif page == "Анализ видео":
                     st.button("Либа символов")
                 with col_btn4:
                     st.button("Объекты")
+                scenes = requests.get(
+                    f'{base_url}/video/scene?video_id={origin_video}',
+                    headers=headers)
+                if scenes.status_code == 200 and (scenes := scenes.json()):
+                    for scene in scenes:
+                        col1, col2 = st.columns([2, 1])
+                        with col1:
+                            image = minio_client.get_file('ava',
+                                                          origin_video + f'_scene_{scene["start_frame"]}_{scene["end_frame"]}.jpg', )
+                            st.image(image.data, output_format='JPEG')
+                        with col2:
+                            st.text(scene["text"])
                 st.write("Ещё какая-то инфа. Например, здесь идут миниатюры сцен")
-            with col2:
-                st.text_input("Поиск", placeholder="Введите текст для поиска")
-                st.text_area("Транскрипция", "{таймкод} - {говорящий} - {фраза}")
-            #
-
     else:
         st.warning("No videos uploaded yet!")
