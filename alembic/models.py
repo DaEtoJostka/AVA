@@ -40,5 +40,10 @@ class Scene(Base):
     start_fps = Column(Float, nullable=False)
     end_fps = Column(Float, nullable=False)
     text = Column(Text, nullable=False)
+    text_emotion = Column(Text, nullable=False)
+    audio_emotion = Column(Text, nullable=False)
+    image_emotion = Column(Text, nullable=False)
+    scene_emotion = Column(Text, nullable=False)
+    main_emotion = Column(Text, nullable=False)
 
     video = relationship("Video", back_populates="scenes")

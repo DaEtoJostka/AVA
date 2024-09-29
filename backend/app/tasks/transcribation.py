@@ -20,9 +20,11 @@ logger = logging.getLogger(__name__)
 from dramatiq_broker import dramatiq
 from infra.minio_client import MinioClient
 from processing.transcribation import get_scenes, Transcribation
+from processing.emotional_analysis import Emotional_analysis
 
 minio_client = MinioClient()
-transcribation = Transcribation()
+transcribation = Transcribation(model_name='openai/whisper-small')
+emotional_analysis = Emotional_analysis()
 
 
 @dramatiq.actor(actor_name='transcribation_video_success')
@@ -83,54 +85,78 @@ def transcribation_video_task(url: str):
     with ( tempfile.NamedTemporaryFile(suffix='.mp4', mode='wb+', delete=False) as video_file, ):
         video_file.write(minio_client.get_file('ava', url).data)
 
-    if scenes := detect(video_file.name, AdaptiveDetector(),show_progress=True,start_in_scene=True):
-            logger.info("Сцены есть, считаем")
-            scenes: list[tuple[FrameTimecode, FrameTimecode]]
-            frames = []
-            video_capture = cv2.VideoCapture(video_file.name)
+    if scenes := detect(video_file.name, AdaptiveDetector(), show_progress=True, start_in_scene=True):
+        logger.info("Сцены есть, считаем")
+        scenes: list[tuple[FrameTimecode, FrameTimecode]]
+        frames = []
+        video_capture = cv2.VideoCapture(video_file.name)
 
-            audio_scenes = transcribation.get_audio_scenes(video_file.name, scenes)
-            texts = transcribation.get_texts(audio_scenes)
+        audio_scenes = transcribation.get_audio_scenes(video_file.name, scenes)
+        texts = transcribation.get_texts(audio_scenes)
 
-            scenes_db_models = []
-            for scene, text in zip(scenes, texts):
-                logger.info("1, 2, 3")
-                start_time = scene[0].get_seconds()
-                end_time = scene[1].get_seconds()
-                start_frame = scene[0].get_frames()
-                end_frame = scene[1].get_frames()
-                start_fps = scene[0].get_framerate()
-                end_fps = scene[1].get_framerate()
+        emotions = emotional_analysis.get_emotionals(text_scenes=texts,
+                                                     audio_scenes=audio_scenes,
+                                                     scene_list=scenes,
+                                                     video_path=video_file.name)
 
-                video_capture.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+        scenes_db_models = []
 
-                success, frame = video_capture.read()
+        text_emotions = emotions['text_emotions']
+        audio_emotions = emotions['audio_emotions']
+        image_emotions = emotions['image_emotions']
+        scene_emotions = emotions['scene_emotions']
+        main_emotion = str(emotions['main_emotion'])
 
-                if success:
-                    success, encoded_image = cv2.imencode('.jpg', frame)
-                    frames.append(encoded_image)
+        for scene, text, text_emotion, audio_emotion, image_emotion, scene_emotion in zip(scenes,
+                                                                                          texts,
+                                                                                          text_emotions,
+                                                                                          audio_emotions,
+                                                                                          image_emotions,
+                                                                                          scene_emotions):
+            logger.info("1, 2, 3")
+            start_time = scene[0].get_seconds()
+            end_time = scene[1].get_seconds()
+            start_frame = scene[0].get_frames()
+            end_frame = scene[1].get_frames()
+            start_fps = scene[0].get_framerate()
+            end_fps = scene[1].get_framerate()
 
-                    minio_client.put_file(
-                        'ava',
-                        f'{url}_scene_{start_frame}_{end_frame}.jpg',
-                        encoded_image.tobytes(),
-                        len(encoded_image.tobytes()),
-                        # length=len(image_bytes.getvalue()),
-                        # content_type='image/jpeg'
-                    )
+            video_capture.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
 
-                scene_obj = Scene(
-                    id=uuid4(),
-                    video_id=url,
-                    start_timecode=start_time,
-                    end_timecode=end_time,
-                    start_frame=start_frame,
-                    end_frame=end_frame,
-                    start_fps=start_fps,
-                    end_fps=end_fps,
-                    text=text['text'],
+            success, frame = video_capture.read()
+
+            if success:
+                success, encoded_image = cv2.imencode('.jpg', frame)
+                frames.append(encoded_image)
+
+                minio_client.put_file(
+                    'ava',
+                    f'{url}_scene_{start_frame}_{end_frame}.jpg',
+                    encoded_image.tobytes(),
+                    len(encoded_image.tobytes()),
+                    # length=len(image_bytes.getvalue()),
+                    # content_type='image/jpeg'
                 )
-                scenes_db_models.append(scene_obj)
-            with SessionLocal() as s:
-                s.bulk_save_objects(scenes_db_models)
-                s.commit()
+
+            logger.error(text_emotion)
+
+            scene_obj = Scene(
+                id=uuid4(),
+                video_id=url,
+                start_timecode=start_time,
+                end_timecode=end_time,
+                start_frame=start_frame,
+                end_frame=end_frame,
+                start_fps=start_fps,
+                end_fps=end_fps,
+                text=text['text'],
+                text_emotion=text_emotion,
+                audio_emotion=audio_emotion,
+                image_emotion=image_emotion,
+                scene_emotion=scene_emotion,
+                main_emotion=main_emotion
+            )
+            scenes_db_models.append(scene_obj)
+        with SessionLocal() as s:
+            s.bulk_save_objects(scenes_db_models)
+            s.commit()

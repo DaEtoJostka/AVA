@@ -25,17 +25,14 @@ def setup_logging() -> None:
 def compress_video(input_file: str, output_file: str, crf: int = 23, preset: str = 'medium') -> None:
     """Compress the video using ffmpeg."""
     try:
-        (ffmpeg
-        .input(input_file)
-        .output(
-                output_file,
-                vcodec='libx264',
-                crf=crf,
-                preset=preset,
-                acodec='aac',
-                audio_bitrate='128k'
-        )
-        .run(overwrite_output=True))
+        command = ['ffmpeg', '-i', input_file, '-vcodec', 'libx264',
+                   '-crf', str(crf),
+                   '-preset', preset,
+                   '-acodec', 'aac',
+                   '-b:a', '128k',
+                   '-y',
+                   output_file]
+        subprocess.run(command, check=True)
         logging.info(f"Video successfully compressed and saved as {output_file}")
     except Exception as e:
         logging.error(e)

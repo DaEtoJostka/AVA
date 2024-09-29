@@ -26,6 +26,11 @@ class SceneResponse(BaseModel):
     start_fps: float
     end_fps: float
     text: str
+    text_emotion: str
+    audio_emotion: str
+    image_emotion: str
+    scene_emotion: str
+    main_emotion: str
 
     class Config:
         orm_mode = True
