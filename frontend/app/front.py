@@ -86,7 +86,7 @@ elif page == "Анализ видео":
                             st.success(scene['audio_emotion'])
                             st.success(scene['image_emotion'])
                             st.success(scene['scene_emotion'])
-                    st.write('Эмоция в видео: ')
+                st.write('Эмоция в видео: ')
                 st.success(scenes[0]['main_emotion'])
     else:
         st.warning("No videos uploaded yet!")
